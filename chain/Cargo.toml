@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "src/node",
+    "src/structure",
+    "src/utils",
+    "src/wallet"
+]
+resolver = "2"
+
+[workspace.dependencies]
+rayon = "1.10.0"
+serde = { version = "1.0.202", features = ["derive"] }
+serde_json = "1.0.117"
+tokio = { version = "1.37.0", features = ["full"] }
+tokio-tungstenite = "0.21.0"
+chrono = "0.4.38"
+thiserror = "1.0.61"
+anyhow = "1.0.86"
