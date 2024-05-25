@@ -95,7 +95,7 @@ impl BigNum {
     pub fn add(&mut self, big_num: &BigNum) {
         let mut is_carry = false;
 
-        self.frac_val.iter_mut().enumerate().for_each(|(index, digit)| {
+        self.frac_val.iter_mut().rev().enumerate().for_each(|(index, digit)| {
             let other_num_frac_val = big_num.frac_val[index];
             let sum_of_digits = other_num_frac_val + *digit;
 
@@ -107,13 +107,35 @@ impl BigNum {
             }
         });
 
-        self.int_val.iter_mut().enumerate().for_each(|(index, elem)| {
+        for idx in 0..self.int_val.len().max(big_num.int_val.len()) {
+            let digit_1 = match self.int_val.get(idx) {
+                Some(num) => *num,
+                None => 0
+            };
 
-        });
-    }
+            let digit_2 = match big_num.int_val.get(idx) {
+                Some(num) => *num,
+                None => 0
+            };
 
-    pub fn substract(&mut self, big_num: &BigNum) {
+            let sum_of_digits = digit_1 + digit_2 + (is_carry as u8);
+            let digit_to_insert = sum_of_digits % 10;
 
+            match self.int_val.get(idx) {
+                Some(_) => {
+                    self.int_val.insert(idx, digit_to_insert);
+                },
+                None => {
+                    self.int_val.push(digit_to_insert);
+                }
+            }
+
+            match sum_of_digits > 9 {
+                true => is_carry = true,
+                false => is_carry = false,
+            };
+
+        }
     }
 }
 
@@ -143,5 +165,11 @@ mod tests {
         };
 
         BigNum::new(int_val_vec, frac_val_arr)
+    }
+
+    #[test]
+    fn adding_big_numbers() {
+        let bn_1 = generate_random_bignumber();
+        let bn_2 = generate_random_bignumber();
     }
 }
