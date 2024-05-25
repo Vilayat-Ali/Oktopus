@@ -6,5 +6,8 @@ edition = "2021"
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+chrono = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+nutype = "0.4.2"
+rand = { workspace = true }

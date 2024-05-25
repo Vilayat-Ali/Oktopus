@@ -9,6 +9,5 @@ edition = "2021"
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 rayon = { workspace = true }
-chrono = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
