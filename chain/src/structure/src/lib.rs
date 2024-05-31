@@ -76,7 +76,23 @@ impl From<&str> for BigNum {
 
 impl PartialEq for BigNum {
     fn eq(&self, other: &Self) -> bool {
-        self.int_val == other.int_val && self.frac_val == other.frac_val
+        if self.int_val.len() != other.int_val.len() {
+            return false;
+        }
+
+        for idx in 0..4 {
+            if self.frac_val[idx] != other.frac_val[idx]  {
+                return false;
+            }
+        }
+
+        for idx in 0..self.int_val.len() {
+           if self.int_val[idx] != other.int_val[idx] {
+                return false;
+           } 
+        }
+
+        true
     }
 
     fn ne(&self, other: &Self) -> bool {
@@ -92,84 +108,7 @@ impl BigNum {
         }
     }
 
-    pub fn add(&mut self, big_num: &BigNum) {
-        let mut is_carry = false;
+    pub fn add(&mut self, big_num: &BigNum) {}
 
-        self.frac_val.iter_mut().rev().enumerate().for_each(|(index, digit)| {
-            let other_num_frac_val = big_num.frac_val[index];
-            let sum_of_digits = other_num_frac_val + *digit;
-
-            *digit = (sum_of_digits + (is_carry as u8)) % 10;
-
-            match sum_of_digits > 9 {
-                true => is_carry = true,
-                false => is_carry = false
-            }
-        });
-
-        for idx in 0..self.int_val.len().max(big_num.int_val.len()) {
-            let digit_1 = match self.int_val.get(idx) {
-                Some(num) => *num,
-                None => 0
-            };
-
-            let digit_2 = match big_num.int_val.get(idx) {
-                Some(num) => *num,
-                None => 0
-            };
-
-            let sum_of_digits = digit_1 + digit_2 + (is_carry as u8);
-            let digit_to_insert = sum_of_digits % 10;
-
-            match self.int_val.get(idx) {
-                Some(_) => {
-                    self.int_val.insert(idx, digit_to_insert);
-                },
-                None => {
-                    self.int_val.push(digit_to_insert);
-                }
-            }
-
-            match sum_of_digits > 9 {
-                true => is_carry = true,
-                false => is_carry = false,
-            };
-
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rand::{thread_rng, Rng};
-
-    fn generate_random_bignumber() -> BigNum {
-        let int_val_vec: Vec<u8> = {
-            let vec_len = thread_rng().gen_range(0..=10);
-            let mut vec: Vec<u8> = Vec::with_capacity(vec_len);
-
-            for idx in 0..=vec_len {
-                vec[idx] = thread_rng().gen_range(0..10);
-            }
-
-            vec
-        };
-
-        let frac_val_arr: [u8; 4] = {
-            let mut arr = [0; 4];
-
-            arr.iter_mut().for_each(|x| *x = thread_rng().gen_range(0..10));
-
-            arr
-        };
-
-        BigNum::new(int_val_vec, frac_val_arr)
-    }
-
-    #[test]
-    fn adding_big_numbers() {
-        let bn_1 = generate_random_bignumber();
-        let bn_2 = generate_random_bignumber();
-    }
+    pub fn substract(&mut self, big_num: &BigNum) {}
 }
