@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json::{to_string_pretty, Result};
-use chrono::Utc;
 
 use crate::txn::Txn;
 

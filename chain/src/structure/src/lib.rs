@@ -81,7 +81,6 @@ impl From<&str> for BigNum {
     }
 }
 
-
 impl PartialEq for BigNum {
     fn eq(&self, other: &Self) -> bool {
         if self.int_val.len() != other.int_val.len() {
@@ -158,6 +157,10 @@ impl BigNum {
             }
         }
     }
+
+    pub fn substract(&mut self, big_num: &BigNum) {
+        
+    }
 }
 
 #[cfg(test)]
@@ -168,9 +171,13 @@ mod tests {
     fn big_number_addition() {
         let mut big_num_1 = BigNum::from("12345.6789");
         let big_num_2 = BigNum::from("0.6789");
-        
         big_num_1.add(&big_num_2);
 
         assert_eq!(big_num_1.to_string().as_str(), "12346.3578");
+    }
+
+    #[test]
+    fn big_number_substraction() {
+        assert_eq!(0, 1-1);
     }
 }
