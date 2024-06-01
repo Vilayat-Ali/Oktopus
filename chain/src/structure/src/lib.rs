@@ -1,4 +1,7 @@
 pub mod txn;
+pub mod block;
+pub mod chain;
+pub mod error;
 
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +14,14 @@ pub struct BigNum {
 impl std::fmt::Debug for BigNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { 
         writeln!(f, "{}.{}", 
+        self.int_val.iter().map(|x| x.to_string()).collect::<String>(), 
+        self.frac_val.iter().map(|x| x.to_string()).collect::<String>())
+    }
+}
+
+impl std::fmt::Display for BigNum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { 
+        write!(f, "{}.{}", 
         self.int_val.iter().map(|x| x.to_string()).collect::<String>(), 
         self.frac_val.iter().map(|x| x.to_string()).collect::<String>())
     }
@@ -32,11 +43,11 @@ impl From<String> for BigNum {
             panic!("Fatal: Cannot convert the string `{}` into big number format.", value);
         }
 
-        let int_val = parts[0].chars().map(|digit| digit as u8).collect::<Vec<u8>>();
+        let int_val = parts[0].chars().map(|digit| digit.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
     
         let frac_val = {
             let mut val_vec: [u8; 4] = [0; 4];
-            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit as u8);
+            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit.to_digit(10).unwrap() as u8);
             val_vec
         };
 
@@ -55,11 +66,11 @@ impl From<&str> for BigNum {
             panic!("Fatal: Cannot convert the string `{}` into big number format.", value);
         }
 
-        let int_val = parts[0].chars().map(|digit| digit as u8).collect::<Vec<u8>>();
+        let int_val = parts[0].chars().map(|digit| digit.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
     
         let frac_val = {
             let mut val_vec: [u8; 4] = [0; 4];
-            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit as u8);
+            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit.to_digit(10).unwrap() as u8);
             val_vec
         };
 
@@ -73,7 +84,23 @@ impl From<&str> for BigNum {
 
 impl PartialEq for BigNum {
     fn eq(&self, other: &Self) -> bool {
-        self.int_val == other.int_val && self.frac_val == other.frac_val
+        if self.int_val.len() != other.int_val.len() {
+            return false;
+        }
+
+        for idx in 0..4 {
+            if self.frac_val[idx] != other.frac_val[idx]  {
+                return false;
+            }
+        }
+
+        for idx in 0..self.int_val.len() {
+           if self.int_val[idx] != other.int_val[idx] {
+                return false;
+           } 
+        }
+
+        true
     }
 
     fn ne(&self, other: &Self) -> bool {
@@ -92,53 +119,58 @@ impl BigNum {
     pub fn add(&mut self, big_num: &BigNum) {
         let mut is_carry = false;
 
-        self.frac_val.iter_mut().enumerate().for_each(|(index, digit)| {
-            let other_num_frac_val = big_num.frac_val[index];
-            let sum_of_digits = other_num_frac_val + *digit;
+        for idx in (0..4).rev() {
+            let mut digit = self.frac_val[idx] + big_num.frac_val[idx] + (is_carry as u8);
+            is_carry = false;
 
-            *digit = (sum_of_digits + (is_carry as u8)) % 10;
-
-            match sum_of_digits > 9 {
-                true => is_carry = true,
-                false => is_carry = false
+            if digit > 9 {
+                digit = digit % 10;
+                is_carry = true;
             }
-        });
 
-        self.int_val.iter_mut().enumerate().for_each(|(index, elem)| {
+            self.frac_val[idx] = digit;
+        }
 
-        });
-    }
+        let size = self.int_val.len().max(big_num.int_val.len());
+        let self_int_vec_size = self.int_val.len();
 
-    pub fn substract(&mut self, big_num: &BigNum) {
+        for idx in 1..=size {
+            let digit_1 = match self_int_vec_size >= idx {
+                true => self.int_val[self_int_vec_size - idx],
+                false => 0
+            };
+            let digit_2 = match big_num.int_val.len() >= idx {
+                true => big_num.int_val[big_num.int_val.len() - idx],
+                false => 0
+            };
 
+            let mut digit_sum = digit_1 + digit_2 + (is_carry as u8);
+            is_carry = false;
+
+            if digit_sum > 9 {
+                digit_sum = digit_sum % 10;
+                is_carry = true;
+            }
+            
+            match self_int_vec_size >= idx {
+                true => self.int_val[self_int_vec_size - idx] = digit_sum,
+                false => self.int_val.insert(0, digit_sum)
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use rand::{thread_rng, Rng};
+    use crate::BigNum;
 
-    fn generate_random_bignumber() -> BigNum {
-        let int_val_vec: Vec<u8> = {
-            let vec_len = thread_rng().gen_range(0..=10);
-            let mut vec: Vec<u8> = Vec::with_capacity(vec_len);
+    #[test]
+    fn big_number_addition() {
+        let mut big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("0.6789");
+        
+        big_num_1.add(&big_num_2);
 
-            for idx in 0..=vec_len {
-                vec[idx] = thread_rng().gen_range(0..10);
-            }
-
-            vec
-        };
-
-        let frac_val_arr: [u8; 4] = {
-            let mut arr = [0; 4];
-
-            arr.iter_mut().for_each(|x| *x = thread_rng().gen_range(0..10));
-
-            arr
-        };
-
-        BigNum::new(int_val_vec, frac_val_arr)
+        assert_eq!(big_num_1.to_string().as_str(), "12346.3578");
     }
 }
