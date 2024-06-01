@@ -35,11 +35,11 @@ impl From<String> for BigNum {
             panic!("Fatal: Cannot convert the string `{}` into big number format.", value);
         }
 
-        let int_val = parts[0].chars().map(|digit| digit as u8).collect::<Vec<u8>>();
+        let int_val = parts[0].chars().map(|digit| digit.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
     
         let frac_val = {
             let mut val_vec: [u8; 4] = [0; 4];
-            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit as u8);
+            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit.to_digit(10).unwrap() as u8);
             val_vec
         };
 
@@ -58,11 +58,11 @@ impl From<&str> for BigNum {
             panic!("Fatal: Cannot convert the string `{}` into big number format.", value);
         }
 
-        let int_val = parts[0].chars().map(|digit| digit as u8).collect::<Vec<u8>>();
+        let int_val = parts[0].chars().map(|digit| digit.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
     
         let frac_val = {
             let mut val_vec: [u8; 4] = [0; 4];
-            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit as u8);
+            parts[1].chars().enumerate().for_each(|(index, digit)| val_vec[index] = digit.to_digit(10).unwrap() as u8);
             val_vec
         };
 
@@ -108,7 +108,34 @@ impl BigNum {
         }
     }
 
-    pub fn add(&mut self, big_num: &BigNum) {}
+    pub fn add(&mut self, big_num: &BigNum) {
+        let mut is_carry = false;
+
+        for idx in (0..4).rev() {
+            let mut digit = self.frac_val[idx] + big_num.frac_val[idx] + (is_carry as u8);
+            is_carry = false;
+
+            if digit > 9 {
+                digit = digit % 10;
+                is_carry = true;
+            }
+
+            self.frac_val[idx] = digit;
+        }
+    }
 
     pub fn substract(&mut self, big_num: &BigNum) {}
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn big_number_addition() {
+        assert_eq!(2, 1+1);
+    }
+
+    #[test]
+    fn big_number_substraction() {
+        assert_eq!(0, 1-1);
+    }
 }
