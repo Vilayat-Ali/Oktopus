@@ -3,6 +3,7 @@ pub mod block;
 pub mod chain;
 pub mod error;
 
+use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -107,6 +108,61 @@ impl PartialEq for BigNum {
     }
 }
 
+impl PartialOrd for BigNum {
+    fn lt(&self, other: &Self) -> bool {
+        matches!(self.partial_cmp(other), Some(Ordering::Less))
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        matches!(self.partial_cmp(other), Some(Ordering::Less | Ordering::Equal))
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        matches!(self.partial_cmp(other), Some(Ordering::Greater))
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        matches!(self.partial_cmp(other), Some(Ordering::Greater | Ordering::Equal))
+    }
+    
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.int_val.len() > other.int_val.len() {
+            return Some(Ordering::Greater);
+        } 
+        else if self.int_val.len() == other.int_val.len() {
+            if self.int_val[0] > other.int_val[0] {
+                return Some(Ordering::Greater);
+            } else if self.int_val[0] < other.int_val[0] {
+                return Some(Ordering::Less);
+            } else {
+                for idx in (0..self.int_val.len()).rev() {
+                    if self.int_val[idx] != other.int_val[idx] {
+                        match self.int_val[idx] > other.int_val[idx] {
+                            true => return Some(Ordering::Greater),
+                            false => return Some(Ordering::Less),
+                        };
+                    }
+                }
+
+                for idx in (0..4).rev() {
+                    if self.frac_val[idx] != other.frac_val[idx] {
+                        match self.frac_val[idx] > other.frac_val[idx] {
+                            true => return Some(Ordering::Greater),
+                            false => return Some(Ordering::Less),
+                        };
+                    }
+                }
+
+                return Some(Ordering::Equal);
+            }
+        }
+        else {
+            return Some(Ordering::Less);
+        }
+        
+    }
+}
+
 impl BigNum {
     pub fn new(int_val: Vec<u8>, frac_val: [u8; 4]) -> Self {
         Self {
@@ -159,13 +215,58 @@ impl BigNum {
     }
 
     pub fn substract(&mut self, big_num: &BigNum) {
-        
+        if self.clone() < big_num.clone() {
+            panic!("Underflow");
+        }
+
+        let mut is_carry = false;
+        let needs_carry = |n1: u8, n2: u8| n1 < n2;
+        let mut process_carry = move |num: u8| -> u8 {
+            is_carry = true;
+            num * 10
+        };
+
+        for idx in (0..4).rev() {
+            let mut digit_1 = self.frac_val[idx] - (is_carry as u8);
+            let digit_2 = big_num.frac_val[idx];
+
+            if needs_carry(digit_1, digit_2) {
+                digit_1 = process_carry(self.frac_val[idx]);
+            }
+
+            self.frac_val[idx] = digit_1 - digit_2;
+            is_carry = false;
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::BigNum;
+
+    #[test]
+    fn compare() {
+        let big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("0.6789");
+
+        assert_eq!(big_num_1 >  big_num_2, true);
+        assert_eq!(big_num_1 <  big_num_2, false);
+        assert_eq!(big_num_1 ==  big_num_2, false);
+
+        let big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("4448550.9789");
+
+        assert_eq!(big_num_1 >  big_num_2, false);
+        assert_eq!(big_num_1 <  big_num_2, true);
+        assert_eq!(big_num_1 ==  big_num_2, false);
+
+        let big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("12345.6789");
+
+        assert_eq!(big_num_1 >  big_num_2, false);
+        assert_eq!(big_num_1 <  big_num_2, false);
+        assert_eq!(big_num_1 ==  big_num_2, true);
+    }
 
     #[test]
     fn big_number_addition() {
