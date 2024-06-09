@@ -57,14 +57,14 @@ WORKDIR /vilchain
 
 COPY --from=builder /vilchain/chain/node/target/release/node /vilchain/node/
 
-COPY --from=builder /vilchain/chain/manager/backend/target/release/backend /vilchain/admin/
+COPY --from=builder /vilchain/chain/manager/backend/target/release/backend /vilchain/admin/backend/
 
-COPY --from=builder /vilchain/chain/manager/frontend/build /vilchain/admin/build
+COPY --from=builder /vilchain/chain/manager/frontend/dist /vilchain/admin/frontend/
 
 COPY --from=builder /root/.bun /root/.bun
 ENV PATH="/root/.bun/bin:${PATH}"
 
-EXPOSE 8000 8080 3000
+EXPOSE 8000 8080 5173
 
 CMD ["sh", "-c", "/vilchain/node/node & /vilchain/admin/backend & bun run --port 3000 --prefix /vilchain/admin/build start"]
 

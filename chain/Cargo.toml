@@ -4,7 +4,7 @@ members = [
     "src/structure",
     "src/utils",
     "src/wallet",
-    "src/manager/backend"
+    "src/admin_api"
     ]
 resolver = "2"
 
