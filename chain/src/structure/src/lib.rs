@@ -215,7 +215,7 @@ impl BigNum {
     }
 
     pub fn substract(&mut self, big_num: &BigNum) {
-        if self.clone() < big_num.clone() {
+        if *self < big_num.clone() {
             panic!("Underflow");
         }
 
@@ -236,6 +236,32 @@ impl BigNum {
 
             self.frac_val[idx] = digit_1 - digit_2;
             is_carry = false;
+        }
+
+        let size = self.int_val.len().max(big_num.int_val.len());
+        let self_int_vec_size = self.int_val.len();
+
+        for idx in 1..=size {
+            let mut digit_1 = match self_int_vec_size >= idx {
+                true => self.int_val[self_int_vec_size - idx] - (is_carry as u8),
+                false => 0
+            };
+            let digit_2 = match big_num.int_val.len() >= idx {
+                true => big_num.int_val[big_num.int_val.len() - idx],
+                false => 0
+            };
+
+            if needs_carry(digit_1, digit_2) {
+                digit_1 = process_carry(digit_1);
+            }
+
+            let digit_diff = digit_1 - digit_2;
+            is_carry = false;
+            
+            match self_int_vec_size >= idx {
+                true => self.int_val[self_int_vec_size - idx] = digit_diff,
+                false => self.int_val.insert(0, digit_diff)
+            }
         }
     }
 }
@@ -279,6 +305,32 @@ mod tests {
 
     #[test]
     fn big_number_substraction() {
-        assert_eq!(0, 1-1);
+        // BigNum substraction TEST - 1
+        let mut big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("0.6789");
+        big_num_1.substract(&big_num_2);
+
+        assert_eq!(big_num_1.to_string().as_str(), "12345.0000");
+
+        // BigNum substraction TEST - 2
+        let mut big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("9.6789");
+        big_num_1.substract(&big_num_2);
+
+        assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
+
+        // BigNum substraction TEST - 3
+        let mut big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("999.6789");
+        big_num_1.substract(&big_num_2);
+
+        // assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
+
+        // BigNum substraction TEST - 4
+        let mut big_num_1 = BigNum::from("12345.6789");
+        let big_num_2 = BigNum::from("9999999.6789");
+        big_num_1.substract(&big_num_2);
+
+        // assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
     }
 }

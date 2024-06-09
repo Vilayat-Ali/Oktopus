@@ -3,8 +3,9 @@ members = [
     "src/node",
     "src/structure",
     "src/utils",
-    "src/wallet"
-]
+    "src/wallet",
+    "src/manager/backend"
+    ]
 resolver = "2"
 
 [workspace.dependencies]
@@ -12,7 +13,9 @@ rayon = "1.10.0"
 serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 tokio = { version = "1.37.0", features = ["full"] }
-tokio-tungstenite = "0.21.0"
+tokio-tungstenite = "0.23.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 chrono = "0.4.38"
 rand = "0.8.5"
 thiserror = "1.0.61"
