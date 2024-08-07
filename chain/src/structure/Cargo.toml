@@ -10,3 +10,4 @@ chrono = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 rand = { workspace = true }
+utils = { path = "../utils" }
