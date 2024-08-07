@@ -1,70 +1,41 @@
-# --------------+------------------------------------------------------------------------------------------------------------------------+
-# BUILDER PHASE |                                                                                                                        |
-# --------------+                                                                                                                        |
-#                                                                                                                                        |
-# PHASE: Builder phase                                                                                                                   |
-# ---------------------------------------------------------------------------------------------------------------------------------------+
+# =================================================================================================
+# BUILDER STAGE
+# =================================================================================================
 
-FROM alpine:latest AS builder
+FROM alpine:latest AS BUILDER
 
 RUN apk update && apk add --no-cache \
-    build-base \
-    curl \
-    git \
-    openssl \
-    ca-certificates \
     bash \
-    libgcc
+    curl \
+    gcc \
+    g++ \
+    make \
+    musl-dev \
+    openssl-dev \
+    perl
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustc --version
 
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
-RUN bun --version
+RUN rustc --version && cargo --version
 
-WORKDIR /vilchain
+WORKDIR /oktopus
 
-COPY /chain .
+COPY ./chain /oktopus/
 
-WORKDIR /vilchain/chain/node
 RUN cargo build --release
 
-WORKDIR /vilchain/chain/manager/backend
-RUN cargo build --release
+# =================================================================================================
+# RELEASE STAGE
+# =================================================================================================
 
-WORKDIR /vilchain/chain/manager/frontend
-COPY /chain/manager/frontend/package.json /chain/manager/frontend/bun.lockb ./
-RUN bun install
-RUN bun run build:app
+FROM alpine:latest AS RELEASE
 
-# -------------+-------------------------------------------------------------------------------------------------------------------------+
-# RUNNER PHASE |                                                                                                                         |
-# -------------+                                                                                                                         |
-#                                                                                                                                        |
-# PHASE: Runtime phase                                                                                                                   |
-# ---------------------------------------------------------------------------------------------------------------------------------------+
+WORKDIR /oktopus
 
-FROM alpine:latest
+COPY --from=BUILDER /oktopus/target/release/node .
 
-RUN apk update && apk add --no-cache \
-    openssl \
-    ca-certificates \
-    libgcc
+CMD ["./node"]
 
-WORKDIR /vilchain
-
-COPY --from=builder /vilchain/chain/node/target/release/node /vilchain/node/
-
-COPY --from=builder /vilchain/chain/manager/backend/target/release/backend /vilchain/admin/backend/
-
-COPY --from=builder /vilchain/chain/manager/frontend/dist /vilchain/admin/frontend/
-
-COPY --from=builder /root/.bun /root/.bun
-ENV PATH="/root/.bun/bin:${PATH}"
-
-EXPOSE 8000 8080 5173
-
-CMD ["sh", "-c", "/vilchain/node/node & /vilchain/admin/backend & bun run --port 3000 --prefix /vilchain/admin/build start"]
-
+EXPOSE 8000

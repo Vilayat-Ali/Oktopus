@@ -1,4 +1,3 @@
-#[tokio::main]
-async fn main() {
-    todo!()
+fn main() {
+
 }

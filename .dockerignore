@@ -1,0 +1,4 @@
+.gitignore
+*/*.log
+*/*.md
+*/node_modules

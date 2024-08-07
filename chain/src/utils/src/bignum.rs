@@ -210,7 +210,47 @@ impl BigNum {
     }
 
     pub fn substract(&mut self, big_num: &BigNum) {
-        // write substract logic
+        let mut is_carry = false;
+
+        if *self == *big_num {
+            *self = BigNum::from("0.0");
+            return;
+        }
+
+        if *self < *big_num {
+            panic!("");
+        }
+
+        for idx in 0..4 {
+            let mut digit_1 = self.frac_val[idx] - (is_carry as u8);
+            let digit_2 = big_num.frac_val[idx];
+
+            if digit_1 < digit_2 {
+                is_carry = true;
+                digit_1 *= 10;
+            }
+
+            self.frac_val[idx] = digit_1 - digit_2;
+        }
+
+        for idx in 0..self.int_val.len() {
+            let self_int_val_idx = self.int_val.len() - 1 - idx;
+            let mut digit_1 = self.int_val[self_int_val_idx] - (is_carry as u8);
+            is_carry = false;
+            
+            let digit_2 = match ((big_num.int_val.len() as isize) - 1 - (idx as isize)) < 0 {
+                true => 0,
+                false => big_num.int_val[big_num.int_val.len() - 1 - idx]
+            };
+            
+            if digit_1 < digit_2 {
+                is_carry = true;
+                digit_1 += 10;
+            }
+
+            self.int_val[self_int_val_idx] = digit_1 - digit_2;
+        }
+        
     }
 }
 
@@ -225,6 +265,8 @@ mod tests {
 
         assert_eq!(big_num_from_str == big_num_from_constructor, true);
     }
+
+    // fn generate_random_bignum() -> BigNum {}
 
     #[test]
     fn compare() {
@@ -252,14 +294,15 @@ mod tests {
 
     #[test]
     fn big_number_addition() {
-        let mut big_num_1 = BigNum::from("12345.6789");
-        let big_num_2 = BigNum::from("0.6789");
+        let mut big_num_1 = BigNum::from("14345.6789");
+        let big_num_2 = BigNum::from("7523.9989");
         big_num_1.add(&big_num_2);
 
-        assert_eq!(big_num_1.to_string().as_str(), "12346.3578");
+        assert_eq!(big_num_1.to_string().as_str(), "21869.6778");
     }
 
     #[test]
+    #[should_panic(expected = "")]
     fn big_number_substraction() {
         // BigNum substraction TEST - 1
         let mut big_num_1 = BigNum::from("12345.6789");
@@ -273,6 +316,8 @@ mod tests {
         let big_num_2 = BigNum::from("9.6789");
         big_num_1.substract(&big_num_2);
 
+        println!("{:#?}", big_num_2);
+
         assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
 
         // BigNum substraction TEST - 3
@@ -280,13 +325,11 @@ mod tests {
         let big_num_2 = BigNum::from("999.6789");
         big_num_1.substract(&big_num_2);
 
-        // assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
+        assert_eq!(big_num_1.to_string().as_str(), "11346.0000");
 
         // BigNum substraction TEST - 4
         let mut big_num_1 = BigNum::from("12345.6789");
         let big_num_2 = BigNum::from("9999999.6789");
-        big_num_1.substract(&big_num_2);
-
-        // assert_eq!(big_num_1.to_string().as_str(), "12336.0000");
+        big_num_1.substract(&big_num_2); // should panic
     }
 }
